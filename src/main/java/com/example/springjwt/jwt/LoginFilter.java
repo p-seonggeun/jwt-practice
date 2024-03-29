@@ -1,6 +1,7 @@
 package com.example.springjwt.jwt;
 
 
+import com.example.springjwt.dto.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -9,7 +10,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * UsernamePasswordAuthenticationFilter를 커스텀 (FormLogin 방식을 disable 시켰기 때문에 기존 필터가 동작하지 않아서)
@@ -22,6 +27,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
+    private final JWTUtil jwtUtil;
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)  throws AuthenticationException {
@@ -39,13 +45,30 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     // 로그인 성공시 실행하는 메서드 (여기서 JWT를 발급하면 됨)
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
-        System.out.println("success");
+        // 특정한 유저를 확인 할 수 있음
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        // username 추출
+        String username = customUserDetails.getUsername();
+        // role 추출
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
+        GrantedAuthority auth = iterator.next();
+        String role = auth.getAuthority();
+
+        // jwtUtil에 토큰 생성을 요청함
+        String token = jwtUtil.createJwt(username, role, 60*60*10L);
+
+        // key 값 : Authorization
+        // 인증방식 : Bearer
+        // 띄어쓰기 인증토큰
+        // RFC 7235 정의에 따라 Authorizaiton: 타입 인증토큰
+        response.addHeader("Authorization", "Bearer " + token);
     }
 
     // 로그인 실패시 실행하는 메서드
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-        System.out.println("fail");
+        response.setStatus(401);
     }
 }

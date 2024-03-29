@@ -1,5 +1,6 @@
 package com.example.springjwt.config;
 
+import com.example.springjwt.jwt.JWTUtil;
 import com.example.springjwt.jwt.LoginFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 public class SecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final JWTUtil jwtUtil;
 
     // Security를 통해 비밀번호를 해시로 암호화 시켜서 검증
     @Bean
@@ -56,7 +58,7 @@ public class SecurityConfig {
         // 원래 UsernamePasswordAuthenticationFilter 자리에 커스텀한 LoginFilter를 추가함
         // authenticationManager 메서드의 인자는 생성자 주입을 받음
         http
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration)), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
 
         // ** 제일 중요 **
         // JWT 방식에서는 세션을 항상 STATELESS 상태로 관리
