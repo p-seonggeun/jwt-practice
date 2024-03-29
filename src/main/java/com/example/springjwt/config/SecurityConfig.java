@@ -1,5 +1,6 @@
 package com.example.springjwt.config;
 
+import com.example.springjwt.jwt.JWTFilter;
 import com.example.springjwt.jwt.JWTUtil;
 import com.example.springjwt.jwt.LoginFilter;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,9 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/", "/join").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .anyRequest().authenticated());
+
+        http
+                .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
 
         // 원래 UsernamePasswordAuthenticationFilter 자리에 커스텀한 LoginFilter를 추가함
         // authenticationManager 메서드의 인자는 생성자 주입을 받음
